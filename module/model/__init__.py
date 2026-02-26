@@ -1,3 +1,3 @@
 from .linear import Linear
 from .embedding import Embedding
-from .SwiGSwiGLUNetworkLU_network import SwiGLUNetwork
+from .SwiGLU import SwiGLU

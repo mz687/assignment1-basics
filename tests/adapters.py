@@ -92,7 +92,12 @@ def run_swiglu(
     # swiglu.w1.weight.data = w1_weight
     # swiglu.w2.weight.data = w2_weight
     # swiglu.w3.weight.data = w3_weight
-    raise NotImplementedError
+    from module.model import SwiGLU
+    swiglu = SwiGLU(d_model, d_ff)
+    swiglu.linear1.weights.data = w1_weight
+    swiglu.linear2.weights.data = w2_weight
+    swiglu.linear3.weights.data = w3_weight
+    return swiglu(in_features)
 
 
 def run_scaled_dot_product_attention(
