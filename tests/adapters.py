@@ -118,7 +118,13 @@ def run_scaled_dot_product_attention(
     Returns:
         Float[Tensor, " ... queries d_v"]: Output of SDPA
     """
-    raise NotImplementedError
+    from module.functions import scaled_dot_product_attention
+    return scaled_dot_product_attention(
+        queries=Q,
+        keys=K,
+        values=V,
+        masks=mask
+    )
 
 
 def run_multihead_self_attention(
@@ -152,7 +158,14 @@ def run_multihead_self_attention(
         Float[Tensor, " ... sequence_length d_out"]: Tensor with the output of running your optimized, batched multi-headed attention
         implementation with the given QKV projection weights and input features.
     """
-    raise NotImplementedError
+    from module.model import CasualMultiheadSelfAttn
+    multihead_attn = CasualMultiheadSelfAttn(d_model, num_heads)
+    multihead_attn.q_proj.weights.data = q_proj_weight
+    multihead_attn.k_proj.weights.data = k_proj_weight
+    multihead_attn.v_proj.weights.data = v_proj_weight
+    multihead_attn.o_proj.weights.data = o_proj_weight
+
+    return multihead_attn(in_features)
 
 
 def run_multihead_self_attention_with_rope(
@@ -192,8 +205,18 @@ def run_multihead_self_attention_with_rope(
         Float[Tensor, " ... sequence_length d_out"]: Tensor with the output of running your optimized, batched multi-headed attention
         implementation with the given QKV projection weights and input features.
     """
-    raise NotImplementedError
-
+    from module.model import CasualMultiheadSelfAttn
+    multihead_attn = CasualMultiheadSelfAttn(
+        d_model = d_model,
+        num_heads = num_heads,
+        max_seq_len = max_seq_len,
+        theta = theta
+    )
+    multihead_attn.q_proj.weights.data = q_proj_weight
+    multihead_attn.k_proj.weights.data = k_proj_weight
+    multihead_attn.v_proj.weights.data = v_proj_weight
+    multihead_attn.o_proj.weights.data = o_proj_weight
+    return multihead_attn(in_features, token_positions)
 
 def run_rope(
     d_k: int,
@@ -214,7 +237,9 @@ def run_rope(
     Returns:
         Float[Tensor, " ... sequence_length d_k"]: Tensor with RoPEd input.
     """
-    raise NotImplementedError
+    from module.rope import RotaryPositionalEmbedding
+    rope = RotaryPositionalEmbedding(theta, d_k, max_seq_len)
+    return rope(in_query_or_key, token_positions)
 
 
 def run_transformer_block(
@@ -287,7 +312,12 @@ def run_transformer_block(
         Float[Tensor, "batch sequence_length d_model"] Tensor with the output of
         running the Transformer block on the input features while using RoPE.
     """
-    raise NotImplementedError
+    from module.model import TransformerBlock
+    transformer_block = TransformerBlock(
+        d_model = d_model,
+        num_heads = num_heads,
+        d_ff = d_ff
+    )
 
 
 def run_transformer_lm(
@@ -450,7 +480,8 @@ def run_softmax(in_features: Float[Tensor, " ..."], dim: int) -> Float[Tensor, "
         Float[Tensor, "..."]: Tensor of with the same shape as `in_features` with the output of
         softmax normalizing the specified `dim`.
     """
-    raise NotImplementedError
+    from module.functions import softmax
+    return softmax(in_features, dim)
 
 
 def run_cross_entropy(
