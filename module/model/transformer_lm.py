@@ -8,7 +8,6 @@ from .transformer_block import TransformerBlock
 from module.RMSNorm import RMSNorm
 from .linear import Linear
 from .embedding import Embedding
-from module.functions import softmax
 
 class TransformerLM(Module):
     '''
@@ -18,7 +17,7 @@ class TransformerLM(Module):
     then the transformer layers,
     then an RMSNorm,
     then a linear layer,
-    finally a softmax
+    finally a softmax (in cross entropy loss, not here)
     '''
 
     def __init__(self, 
@@ -82,5 +81,5 @@ class TransformerLM(Module):
             x = self.transformer_blocks[i](x)
         x = self.output_norm(x)
         x = self.output_embedding(x)
-        return softmax(x, dim=-1)
+        return x
 
