@@ -27,6 +27,7 @@ class SwiGLU(Module):
         return einsum(torch.sigmoid(x), x, '..., ... -> ...')
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        assert self.linear1.weights.data.shape == self.linear3.weights.data.shape
         return self.linear2(
             einsum(
                 self.SiLU(self.linear1(x)),
@@ -34,3 +35,4 @@ class SwiGLU(Module):
                 '..., ... -> ...'
             )
         )
+        

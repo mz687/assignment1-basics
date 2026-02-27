@@ -316,9 +316,22 @@ def run_transformer_block(
     transformer_block = TransformerBlock(
         d_model = d_model,
         num_heads = num_heads,
-        d_ff = d_ff
+        d_ff = d_ff,
+        theta=theta,
+        max_seq_len=max_seq_len
     )
 
+    transformer_block.mha.q_proj.weights.data = weights['attn.q_proj.weight']
+    transformer_block.mha.k_proj.weights.data = weights['attn.k_proj.weight']
+    transformer_block.mha.v_proj.weights.data = weights['attn.v_proj.weight']
+    transformer_block.mha.o_proj.weights.data = weights['attn.output_proj.weight']
+    transformer_block.norm1.weights.data = weights['ln1.weight']
+    transformer_block.norm2.weights.data = weights['ln2.weight']
+    transformer_block.swiglu.linear1.weights.data = weights['ffn.w1.weight']
+    transformer_block.swiglu.linear2.weights.data = weights['ffn.w2.weight']
+    transformer_block.swiglu.linear3.weights.data = weights['ffn.w3.weight']
+    
+    return transformer_block(in_features)
 
 def run_transformer_lm(
     vocab_size: int,
@@ -399,8 +412,35 @@ def run_transformer_lm(
         Float[Tensor, "batch_size sequence_length vocab_size"]: Tensor with the predicted unnormalized
         next-word distribution for each token.
     """
-    raise NotImplementedError
+    from module.model import TransformerLM
+    transformerLM = TransformerLM(
+        vocab_size = vocab_size,
+        context_length = context_length,
+        d_model = d_model,
+        num_layers = num_layers,
+        num_heads = num_heads,
+        d_ff = d_ff,
+        theta = rope_theta
+    )
 
+    transformerLM.token_embeddings.weights.data = weights['token_embeddings.weight']
+    for i in range(num_layers):
+        transformer_block = transformerLM.transformer_blocks[i]
+
+        transformer_block.mha.q_proj.weights.data = weights[f'layers.{i}.attn.q_proj.weight']
+        transformer_block.mha.k_proj.weights.data = weights[f'layers.{i}.attn.k_proj.weight']
+        transformer_block.mha.v_proj.weights.data = weights[f'layers.{i}.attn.v_proj.weight']
+        transformer_block.mha.o_proj.weights.data = weights[f'layers.{i}.attn.output_proj.weight']
+        transformer_block.norm1.weights.data = weights[f'layers.{i}.ln1.weight']
+        transformer_block.norm2.weights.data = weights[f'layers.{i}.ln2.weight']
+        transformer_block.swiglu.linear1.weights.data = weights[f'layers.{i}.ffn.w1.weight']
+        transformer_block.swiglu.linear2.weights.data = weights[f'layers.{i}.ffn.w2.weight']
+        transformer_block.swiglu.linear3.weights.data = weights[f'layers.{i}.ffn.w3.weight']
+
+    transformerLM.output_norm.weights.data = weights['ln_final.weight']
+    transformerLM.output_embedding.weights.data = weights['lm_head.weight']
+
+    return transformerLM(in_indices)
 
 def run_rmsnorm(
     d_model: int,
