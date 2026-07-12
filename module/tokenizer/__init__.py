@@ -1,2 +1,2 @@
-from .BPE_tokenizer import BPETokenizer
-from .tokenizer import Tokenizer
+from .tokenizer import train_BPETokenizer
+from .BPETokenizer import BPETokenizer

@@ -18,9 +18,6 @@ class RotaryPositionalEmbedding(Module):
         self.max_seq_len = max_seq_len
         token_positions = torch.arange(max_seq_len)
         ks = torch.arange(1, d_k//2+1)
-        # tokens_pos_grad, ks_grad = torch.meshgrid(token_positions, ks, indexing='ij')
-        # blocks = self.gen_block(tokens_pos_grad, ks_grad, theta, d_k)
-        # blocks = torch.block_diag(blocks).to(device=device if device is not None else 'cpu')
         blocks = torch.stack([
             torch.block_diag(
                 *[rearrange(x, '1 ... -> ...') for x in torch.chunk(self.gen_block(i, ks, theta, d_k), chunks=d_k//2, dim=0)]

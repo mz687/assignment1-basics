@@ -675,9 +675,14 @@ def get_tokenizer(
     Returns:
         A BPE tokenizer that uses the provided vocab, merges, and special tokens.
     """
-    from module.tokenizer import Tokenizer
-    return Tokenizer(vocab, merges, special_tokens)
-
+    # from module.tokenizer import Tokenizer
+    # return Tokenizer(vocab, merges, special_tokens)
+    from module.tokenizer import BPETokenizer
+    return BPETokenizer(
+        vocab=vocab,
+        merges=merges,
+        special_tokens=special_tokens
+    )
 
 def run_train_bpe(
     input_path: str | os.PathLike,
@@ -706,11 +711,18 @@ def run_train_bpe(
                 representing that <token1> was merged with <token2>.
                 Merges are ordered by order of creation.
     """
-    from module.tokenizer import BPETokenizer
-    tokenizer = BPETokenizer(
+    # from module.tokenizer import BPETokenizer
+    # tokenizer = BPETokenizer(
+    #     input_path=input_path,
+    #     vocab_size=vocab_size,
+    #     special_tokens=special_tokens
+    # )
+
+    # return tokenizer.train()
+
+    from module.tokenizer import train_BPETokenizer
+    return train_BPETokenizer(
         input_path=input_path,
         vocab_size=vocab_size,
         special_tokens=special_tokens
     )
-
-    return tokenizer.train()
