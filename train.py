@@ -40,6 +40,7 @@ def main():
             model=model,
             optimizer=optimizer
         )
+        print(f'Found ckpt stored in {args.load}\nWill resume training from step ({t})')
 
     lr_scheduler = LRScheduler(
         t=t,
@@ -55,6 +56,7 @@ def main():
         pred = model(inputs)
         loss = cross_entropy_loss(logits, pred)
 
+        grad_clip(model.parameters())
         optimizer.step()
         lr_scheduler.step()
 

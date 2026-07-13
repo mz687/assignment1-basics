@@ -1,48 +1,92 @@
-from .tokenizer import train_BPETokenizer
+import os
+import regex as re
+import multiprocessing as mp
+from .common import gpt2_bytes_to_unicode
 import json
 from pathlib import Path
-from .common import gpt2_bytes_to_unicode
+from collections.abc import Iterable, Iterator
+import heapq
+from .tokenizer import find_chunk_boundaries
+import numpy as np
+from tqdm import tqdm
+from .BPETokenizer import BPETokenizer
 
-def save(vocab, merges, vocab_path, merges_path):
-    byte_encoder = gpt2_bytes_to_unicode()
+def _worker(job):
+    start, end, tokenizer, file_path = job
+    with open(file_path, 'rb') as f:
+        f.seek(start)
+        chunk = f.read(end-start).decode('utf-8', errors='ignore')
+    return tokenizer.encode(chunk)
 
-    def encode_token(token: bytes) -> str:
-        return "".join(byte_encoder[byte] for byte in token)
+def tokenize_text_to_token_ids_and_save(
+    file_path: str,
+    tokenizer: BPETokenizer,
+    output_file_path: str | Path,
+    show_prograss=False
+):
+    assert os.path.exists(file_path), print(f'file_path ({file_path}) cannot be found!')
+
+    num_processes=64
+
+    with Path(file_path).open('rb') as f:
+        boundaries = find_chunk_boundaries(f, num_processes, b'<|endoftext|>')
     
-    vocab_json = {
-        encode_token(token): ID for ID, token in vocab.items()
-    }
-    with Path(vocab_path).open('w', encoding='utf-8') as f:
-        json.dump(vocab_json, f, ensure_ascii=False, indent=2)
-    print(f"vocab has been saved to {vocab_path}.")
+    boundaries = list(zip(boundaries[:-1], boundaries[1:]))
+    results = []
 
-    with Path(merges_path).open('w', encoding='utf-8', newline='\n') as f:
-        for left, right in merges:
-            f.write(
-                f"{encode_token(left)} {encode_token(right)}\n"
-            )
-    print(f"merges have been saved to {merges_path}.")
+    chunk_per_worker = (len(boundaries) + num_processes - 1) // num_processes
+    jobs = [
+        (
+            start,
+            end, 
+            tokenizer, 
+            file_path
+        ) for start, end in boundaries
+    ]
+    ctx = mp.get_context("spawn")
+    with ctx.Pool(processes=num_processes) as pool:
+        with tqdm(total=len(jobs), desc='Tokenizing', unit='chunk') as progress:
+            for res in pool.imap(_worker, jobs):
+                results += res
+            progress.update(1)
 
-def main():
+    # save the token_ids to a file 
+    results = np.array(results, dtype=np.uint16)
+    np.save(output_file_path, results)
+
+def tokenize_owt():
+    # hardcode the path to owt_train, owt_valid, merges, and vocab
     owt_train_path = '/global/cfs/cdirs/m4410/mzheng/cs336/assignment1-basics/data/owt_train.txt'
-    vocab_size = 32_000
-    special_tokens = ['<|endoftext|>']
+    owt_valid_path = '/global/cfs/cdirs/m4410/mzheng/cs336/assignment1-basics/data/owt_valid.txt'
+    owt_vocab_path = '/global/cfs/cdirs/m4410/mzheng/cs336/assignment1-basics/data/owt_train_vocab.json'
+    owt_merges_path = '/global/cfs/cdirs/m4410/mzheng/cs336/assignment1-basics/data/owt_train_merges.txt'
 
-    vocab, merges = train_BPETokenizer(
-        input_path=owt_train_path,
-        vocab_size=vocab_size,
-        special_tokens=special_tokens,
-        show_prograss=True,
+    tokenizer = BPETokenizer.from_files(
+        vocab_file_path=owt_vocab_path,
+        merges_file_path=owt_merges_path,
+        special_tokens=['<|endoftext|>']
     )
 
-    vocab_path = '/global/cfs/cdirs/m4410/mzheng/cs336/assignment1-basics/data/owt_train_vocab.json'
-    merges_path = '/global/cfs/cdirs/m4410/mzheng/cs336/assignment1-basics/data/owt_train_merges.txt'
-    save(
-        vocab=vocab,
-        merges=merges,
-        vocab_path=vocab_path,
-        merges_path=merges_path
+    owt_train_tokenized_output_file_path = '/global/cfs/cdirs/m4410/mzheng/cs336/assignment1-basics/data/owt_train.npy'
+    print("start tokenizing owt.train")
+    tokenize_text_to_token_ids_and_save(
+        file_path=owt_train_path,
+        tokenizer=tokenizer,
+        output_file_path=owt_train_tokenized_output_file_path,
+        show_prograss=True
     )
+    print(f"tokenized owt_train.txt saved to {owt_train_tokenized_output_file_path}")
+
+    owt_valid_tokenized_output_file_path = '/global/cfs/cdirs/m4410/mzheng/cs336/assignment1-basics/data/owt_valid.npy'
+    print("start tokenizing owt.valid")
+    tokenize_text_to_token_ids_and_save(
+        file_path=owt_valid_path,
+        tokenizer=tokenizer,
+        output_file_path=owt_valid_tokenized_output_file_path,
+        show_prograss=True
+    )
+    print(f"tokenized owt_valid.txt saved to {owt_train_tokenized_output_file_path}")
+
 
 if __name__ == '__main__':
-    main()
+    tokenize_owt()

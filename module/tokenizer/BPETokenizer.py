@@ -6,6 +6,10 @@ import json
 from pathlib import Path
 from collections.abc import Iterable, Iterator
 import heapq
+from .tokenizer import find_chunk_boundaries
+import numpy as np
+from tqdm import tqdm
+import multiprocessing as mp
 
 class BPETokenizer:
     PAT = r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
@@ -104,13 +108,14 @@ class BPETokenizer:
             tokens = merged 
         return [self.reverse_vocab[token] for token in tokens]
 
-    def encode(self, text: str) -> list[int]:
+    def encode(self, text: str, show_prograss=False, n_processes=1) -> list[int]:
         '''
         encode a str to a list of token ids.
         '''
         ret = []
         text_splits = re.split(f"({self.pattern})", text) if self.special_tokens else [text]
-        for text_split in text_splits:
+        
+        for text_split in tqdm(text_splits, desc='Encode Text', disable=not show_prograss):
             if text_split in self.special_tokens:
                 ret.append(self.reverse_vocab[text_split.encode('utf-8')])
                 continue
@@ -129,7 +134,7 @@ class BPETokenizer:
         '''
         return b"".join(self.vocab[ID] for ID in ids).decode('utf-8', errors='replace')
 
-if __name__ == '__main__':
+def test():
     tokenizer = BPETokenizer.from_files(
         merges_file_path='/global/cfs/cdirs/m4410/mzheng/cs336/assignment1-basics/data/owt_train_merges.txt',
         vocab_file_path='/global/cfs/cdirs/m4410/mzheng/cs336/assignment1-basics/data/owt_train_vocab.json',
@@ -140,3 +145,6 @@ if __name__ == '__main__':
     # text = "🙃"
     print(tokenizer.encode_iterable(text))
     print(tokenizer.decode(tokenizer.encode(text)))
+
+if __name__ == '__main__':
+    test()
