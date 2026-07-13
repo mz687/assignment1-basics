@@ -85,4 +85,3 @@ class TransformerLM(Module):
         x = self.output_norm(x)
         x = self.output_embedding(x)
         return x
-
