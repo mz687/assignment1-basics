@@ -504,6 +504,7 @@ def run_get_batch(
         is the sampled input sequences, and the second tuple item is the corresponding
         language modeling labels.
     """
+    from module.data_loader import get_batch
     return get_batch(
         dataset=dataset,
         batch_size=batch_size,

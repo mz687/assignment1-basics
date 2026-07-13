@@ -9,7 +9,7 @@ class RMSNorm(Module):
                  d_model: int,
                  eps:float = 1e-5,
                  device: torch.device | None = None,
-                 dtype: torch.dtype | None = None):
+                 dtype: torch.dtype | None = torch.float32):
         '''
         d_model: Hidden dim of the model,
         eps: hp, but usually fixed to 1e-5
@@ -22,7 +22,7 @@ class RMSNorm(Module):
         self.eps = eps
         self.d_model = d_model
 
-        self.weights = nn.Parameter(torch.empty(self.d_model)).to(dtype, device)
+        self.weights = nn.Parameter(torch.empty(self.d_model).to(dtype=dtype, device=device))
 
         self._init_parameters()
 

@@ -21,6 +21,7 @@ class TransformerBlock(Module):
                  d_ff:int,
                  theta:float,
                  max_seq_len:int,
+                 dtype: torch.dtype | None = torch.float32,
                  device:torch.device | None = None):
         '''
         d_model: dim of transformer block's input.
@@ -28,20 +29,23 @@ class TransformerBlock(Module):
         d_ff: dim of the FFN hidden layer
         '''
         super(TransformerBlock, self).__init__()
-
+        
         self.swiglu = SwiGLU(
             d_model = d_model,
-            d_ff = d_ff
+            d_ff = d_ff,
+            device=device,
+            dtype=dtype
         )
         self.mha = CasualMultiheadSelfAttn(
             d_model = d_model,
             num_heads = num_heads,
             theta = theta,
             max_seq_len = max_seq_len,
-            device = device
+            device = device,
+            dtype=dtype
         )
-        self.norm1 = RMSNorm(d_model)
-        self.norm2 = RMSNorm(d_model)
+        self.norm1 = RMSNorm(d_model, dtype=dtype, device=device)
+        self.norm2 = RMSNorm(d_model, dtype=dtype, device=device)
 
     def forward(self, x:torch.Tensor) -> torch.Tensor:
         x = x + self.mha(self.norm1(x))

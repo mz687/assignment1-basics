@@ -28,8 +28,8 @@ class TransformerLM(Module):
                  num_heads: int,
                  d_ff: int,
                  theta: float,
-                 device: torch.device | None = None,
-                 dtype: torch.dtype | None = None):
+                 device: torch.device | None = 'cuda',
+                 dtype: torch.dtype | None = torch.float32):
         '''
         d_model: dim of transformer block's input.
         num_heads: number of heads to use in multi-head attn.
@@ -51,16 +51,17 @@ class TransformerLM(Module):
             device=device,
             dtype=dtype
         )
-
-        self.transformer_blocks = [
+        self.transformer_blocks = nn.ModuleList([
             TransformerBlock(
                 d_model = d_model,
                 num_heads = num_heads,
                 d_ff = d_ff,
                 theta = theta,
-                max_seq_len = context_length
+                max_seq_len = context_length,
+                device=device,
+                dtype=dtype
             ) for _ in range(num_layers)
-        ]
+        ])
 
         self.output_norm = RMSNorm(
             d_model = d_model,
@@ -70,7 +71,9 @@ class TransformerLM(Module):
 
         self.output_embedding = Linear(
             in_features = d_model,
-            out_features = vocab_size
+            out_features = vocab_size,
+            device = device,
+            dtype = dtype
         )
 
     def forward(self,

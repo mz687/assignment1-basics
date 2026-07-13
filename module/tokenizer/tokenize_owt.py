@@ -1,15 +1,15 @@
 import os
 import regex as re
 import multiprocessing as mp
-from .common import gpt2_bytes_to_unicode
+from common import gpt2_bytes_to_unicode
 import json
 from pathlib import Path
 from collections.abc import Iterable, Iterator
 import heapq
-from .tokenizer import find_chunk_boundaries
+from tokenizer import find_chunk_boundaries
 import numpy as np
 from tqdm import tqdm
-from .BPETokenizer import BPETokenizer
+from BPETokenizer import BPETokenizer
 
 def _worker(job):
     start, end, tokenizer, file_path = job

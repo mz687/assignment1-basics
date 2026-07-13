@@ -1,1 +1,1 @@
-from .data_loader import get_batch_generator, get_batch
+from .data_loader import get_batch_generator, get_batch, iterate_eval_dataset

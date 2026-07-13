@@ -1,4 +1,5 @@
 import math
+import torch
 
 def learning_rate_schedule(t: int,
                            max_learning_rate: float,
@@ -28,7 +29,7 @@ class LRScheduler:
         min_learning_rate: float,
         cosine_cycle_iters: int,
         warmup_iters: int,
-        t: int = 1
+        t: int = 0
     ):
         self.max_learning_rate = max_learning_rate
         self.min_learning_rate = min_learning_rate
@@ -48,7 +49,7 @@ class LRScheduler:
     
     def step(self):
         lr = learning_rate_schedule(
-            t=self.t,
+            t=self.t+1,
             max_learning_rate=self.max_learning_rate,
             min_learning_rate=self.min_learning_rate,
             warmup_iters=self.warmup_iters,

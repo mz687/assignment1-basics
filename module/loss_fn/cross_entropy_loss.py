@@ -13,5 +13,5 @@ def cross_entropy_loss(
     inputs -= maxes
     targets_vals = torch.gather(inputs, dim=1, index=targets.unsqueeze(1))
     # compute the cross entropy loss
-    cross_entropy_loss = torch.sum(torch.log(torch.sum(torch.exp(inputs), dim=1, keepdims=True)) - targets_vals, dim=0) / batch_size 
-    return cross_entropy_loss
+    loss = torch.sum(torch.log(torch.sum(torch.exp(inputs), dim=1, keepdims=True)) - targets_vals, dim=0) / batch_size 
+    return loss

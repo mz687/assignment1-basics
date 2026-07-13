@@ -22,7 +22,7 @@ class RotaryPositionalEmbedding(Module):
             torch.block_diag(
                 *[rearrange(x, '1 ... -> ...') for x in torch.chunk(self.gen_block(i, ks, theta, d_k), chunks=d_k//2, dim=0)]
             ) for i in range(max_seq_len)
-        ], dim=0)
+        ], dim=0).to(device=device)
         self.register_buffer('rope_buffer', blocks, persistent=False)
 
     def gen_block(self, i:torch.Tensor, k:torch.Tensor, theta:float, d:int):

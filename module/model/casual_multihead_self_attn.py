@@ -14,7 +14,8 @@ class CasualMultiheadSelfAttn(Module):
                  num_heads: int,
                  theta: float | None = None,
                  max_seq_len: int | None = None,
-                 device: torch.device | None = None):
+                 device: torch.device | None = None,
+                 dtype: torch.dtype | None = torch.float32):
         '''
         d_model: the hidden dim of the model.
         num_heads: number of heads in multi-head self attn.
@@ -25,25 +26,34 @@ class CasualMultiheadSelfAttn(Module):
         self.d_model = d_model
         self.num_heads = num_heads
         self.d_k = self.d_v = d_model // num_heads
+        self.device=device
 
         self.q_proj = Linear(
             in_features=self.d_model,
             out_features=self.d_k*self.num_heads,
+            dtype=dtype,
+            device=device
         )
 
         self.k_proj = Linear(
             in_features=self.d_model,
             out_features=self.d_k*self.num_heads,
+            dtype=dtype,
+            device=device
         )
 
         self.v_proj = Linear(
             in_features=self.d_model,
             out_features=self.d_v*self.num_heads,
+            dtype=dtype,
+            device=device
         )
 
         self.o_proj = Linear(
             in_features=self.d_v*self.num_heads,
-            out_features=self.d_model
+            out_features=self.d_model,
+            dtype=dtype,
+            device=device
         )
 
         if theta is not None and max_seq_len is not None:
@@ -61,7 +71,7 @@ class CasualMultiheadSelfAttn(Module):
         assert x.shape[-1] == self.d_model
 
         seq_len = x.shape[-2]
-        mask = torch.tril(torch.ones(seq_len, seq_len, dtype=torch.bool))
+        mask = torch.tril(torch.ones(seq_len, seq_len, dtype=torch.bool, device=self.device))
 
         q_projed = self.q_proj(x)
         k_projed = self.k_proj(x)

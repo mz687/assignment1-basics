@@ -21,15 +21,15 @@ class Linear(Module):
         self.in_features = in_features
         self.out_features = out_features
         self.weights = nn.Parameter(
-            torch.empty(out_features, in_features)
-        ).to(dtype=dtype, device=device)
+            torch.empty(out_features, in_features, device=device, dtype=dtype)
+        )
 
         self._init_parameters()
     
     def _init_parameters(self):
         '''
         Initialize the weight, so that it's normal(mean=0, var=2/(d_in+d_out)) 
-        \in [-3*std, 3*std]
+        in [-3*std, 3*std]
         '''
         var = 2/(self.in_features+self.out_features)
         std = math.sqrt(var)
@@ -42,4 +42,8 @@ class Linear(Module):
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return  einsum(self.weights, x, "d_out d_in, ... d_in -> ... d_out")
+        return  einsum(
+            self.weights, 
+            x,
+             "d_out d_in, ... d_in -> ... d_out"
+        )

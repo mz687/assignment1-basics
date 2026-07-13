@@ -11,7 +11,7 @@ class SwiGLU(Module):
                  d_model:int, 
                  d_ff:int, 
                  device:torch.device|None = None, 
-                 dtype:torch.dtype|None = None):
+                 dtype:torch.dtype|None = torch.float32):
         '''
         d_ff: canonical val: 8/3 * d_model
         SwiGLU(x) = SwiGLU(x, w1, w2, w3) = w2(SiLU(w1@x)*w3@x)
@@ -19,9 +19,10 @@ class SwiGLU(Module):
         GLU(x, w1, w2) = sigmoid(w1@x) * w2@x
         '''
         super(SwiGLU, self).__init__()
-        self.linear1 = Linear(d_ff, d_model)
-        self.linear2 = Linear(d_model, d_ff)
-        self.linear3 = Linear(d_ff, d_model)
+
+        self.linear1 = Linear(d_model, d_ff, device=device, dtype=dtype)
+        self.linear2 = Linear(d_ff, d_model, device=device, dtype=dtype)
+        self.linear3 = Linear(d_model, d_ff, device=device, dtype=dtype)
 
     def SiLU(self, x: torch.Tensor) -> torch.Tensor:
         return einsum(torch.sigmoid(x), x, '..., ... -> ...')
